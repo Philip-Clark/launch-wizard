@@ -1,0 +1,15 @@
+import { name as solaraName, defaultColors as solaraColors, htmlTemplate as solaraHtml, contentFields as solaraContent, statFields as solaraStats, colorElements as solaraColorElements, imageSlots as solaraImageSlots, sections as solaraSections } from "./solara";
+import { name as botanicaName, defaultColors as botanicaColors, htmlTemplate as botanicaHtml, contentFields as botanicaContent, statFields as botanicaStats, colorElements as botanicaColorElements, imageSlots as botanicaImageSlots, sections as botanicaSections } from "./botanica";
+import { name as midnightName, defaultColors as midnightColors, htmlTemplate as midnightHtml, contentFields as midnightContent, statFields as midnightStats, colorElements as midnightColorElements, imageSlots as midnightImageSlots, sections as midnightSections } from "./midnight";
+import { name as emberName, defaultColors as emberColors, htmlTemplate as emberHtml, contentFields as emberContent, statFields as emberStats, colorElements as emberColorElements, imageSlots as emberImageSlots, sections as emberSections } from "./ember";
+import { name as horizonName, defaultColors as horizonColors, htmlTemplate as horizonHtml, contentFields as horizonContent, statFields as horizonStats, colorElements as horizonColorElements, imageSlots as horizonImageSlots, sections as horizonSections } from "./horizon";
+import { name as prismName, defaultColors as prismColors, htmlTemplate as prismHtml, contentFields as prismContent, statFields as prismStats, colorElements as prismColorElements, imageSlots as prismImageSlots, sections as prismSections } from "./prism";
+
+export var templates = [
+  { id: "solara", name: solaraName, defaultColors: solaraColors, htmlTemplate: solaraHtml, contentFields: solaraContent, statFields: solaraStats, colorElements: solaraColorElements, imageSlots: solaraImageSlots, sections: solaraSections },
+  { id: "botanica", name: botanicaName, defaultColors: botanicaColors, htmlTemplate: botanicaHtml, contentFields: botanicaContent, statFields: botanicaStats, colorElements: botanicaColorElements, imageSlots: botanicaImageSlots, sections: botanicaSections },
+  { id: "midnight", name: midnightName, defaultColors: midnightColors, htmlTemplate: midnightHtml, contentFields: midnightContent, statFields: midnightStats, colorElements: midnightColorElements, imageSlots: midnightImageSlots, sections: midnightSections },
+  { id: "ember", name: emberName, defaultColors: emberColors, htmlTemplate: emberHtml, contentFields: emberContent, statFields: emberStats, colorElements: emberColorElements, imageSlots: emberImageSlots, sections: emberSections },
+  { id: "horizon", name: horizonName, defaultColors: horizonColors, htmlTemplate: horizonHtml, contentFields: horizonContent, statFields: horizonStats, colorElements: horizonColorElements, imageSlots: horizonImageSlots, sections: horizonSections },
+  { id: "prism", name: prismName, defaultColors: prismColors, htmlTemplate: prismHtml, contentFields: prismContent, statFields: prismStats, colorElements: prismColorElements, imageSlots: prismImageSlots, sections: prismSections },
+];
