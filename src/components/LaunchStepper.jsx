@@ -11,7 +11,10 @@ import {
   Fade,
   CircularProgress,
   Collapse,
+  Popover,
+  InputAdornment,
 } from "@mui/material";
+import ColorLensIcon from "@mui/icons-material/ColorLens";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
@@ -189,6 +192,356 @@ function CompletionScreen(props) {
           />
         </Box>
       </Collapse>
+    </Box>
+  );
+}
+
+/* ── Preset color palettes ──────────────────────────────── */
+var PRESET_COLORS = [
+  "#D4E157", "#F44336", "#E91E63", "#9C27B0", "#673AB7",
+  "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", "#009688",
+  "#4CAF50", "#8BC34A", "#CDDC39", "#FFC107", "#FF9800",
+  "#FF5722", "#795548", "#607D8B", "#1a1a2e", "#16213e",
+  "#0f3460", "#e94560", "#f5f5f5", "#333333", "#6b7280",
+  "#000000", "#FFFFFF",
+];
+
+function isValidHex(hex) {
+  return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(hex);
+}
+
+function normalizeHex(hex) {
+  if (hex.length === 4) {
+    return "#" + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+  }
+  return hex;
+}
+
+/* Decide if white or black text for contrast */
+function contrastText(hex) {
+  var c = hex.replace("#", "");
+  if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+  var r = parseInt(c.substring(0, 2), 16);
+  var g = parseInt(c.substring(2, 4), 16);
+  var b = parseInt(c.substring(4, 6), 16);
+  var lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.6 ? "#000" : "#fff";
+}
+
+function ColorPickerRow({ colorKey, label, value, onChange }) {
+  var stateOpen = useState(false);
+  var open = stateOpen[0];
+  var setOpen = stateOpen[1];
+
+  var stateHexInput = useState(value);
+  var hexInput = stateHexInput[0];
+  var setHexInput = stateHexInput[1];
+
+  var stateHexError = useState(false);
+  var hexError = stateHexError[0];
+  var setHexError = stateHexError[1];
+
+  var anchorRef = useRef(null);
+  var nativePickerRef = useRef(null);
+
+  /* Sync local hex input when external value changes */
+  useEffect(function () {
+    setHexInput(value);
+    setHexError(false);
+  }, [value]);
+
+  function handleSwatchClick() {
+    setOpen(function (prev) { return !prev; });
+  }
+
+  function handleClose() {
+    setOpen(false);
+  }
+
+  function handlePresetClick(hex) {
+    onChange(colorKey, hex);
+    setOpen(false);
+  }
+
+  function handleNativeChange(e) {
+    onChange(colorKey, e.target.value);
+  }
+
+  function handleHexInputChange(e) {
+    var raw = e.target.value;
+    /* Ensure # prefix */
+    if (raw.length > 0 && raw[0] !== "#") raw = "#" + raw;
+    /* Limit to 7 chars */
+    if (raw.length > 7) raw = raw.slice(0, 7);
+    setHexInput(raw);
+
+    if (isValidHex(raw)) {
+      setHexError(false);
+      onChange(colorKey, normalizeHex(raw));
+    } else {
+      setHexError(raw.length >= 4);
+    }
+  }
+
+  function handleHexInputBlur() {
+    if (isValidHex(hexInput)) {
+      onChange(colorKey, normalizeHex(hexInput));
+      setHexError(false);
+    } else {
+      setHexInput(value);
+      setHexError(false);
+    }
+  }
+
+  function handleHexKeyDown(e) {
+    if (e.key === "Enter") {
+      e.target.blur();
+    }
+  }
+
+  var isLight = contrastText(value) === "#000";
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        {/* Color swatch button */}
+        <Box
+          ref={anchorRef}
+          onClick={handleSwatchClick}
+          sx={{
+            width: 44,
+            height: 44,
+            minWidth: 44,
+            borderRadius: "0.625rem",
+            background: value,
+            border: isLight ? "2px solid #D1D5DB" : "2px solid transparent",
+            cursor: "pointer",
+            transition: "box-shadow 0.2s, border-color 0.2s",
+            boxShadow: open
+              ? "0 0 0 3px " + purple + "44"
+              : "0 1px 3px rgba(0,0,0,0.1)",
+            "&:hover": {
+              boxShadow: "0 0 0 3px " + purple + "33",
+            },
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <ColorLensIcon
+            sx={{
+              fontSize: 20,
+              color: contrastText(value),
+              opacity: 0.5,
+              transition: "opacity 0.2s",
+              ".MuiBox-root:hover &": { opacity: 0.8 },
+            }}
+          />
+        </Box>
+
+        {/* Label + hex input */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            variant="body2"
+            color="#1F2937"
+            fontWeight={600}
+            sx={{ fontSize: "0.8rem", mb: 0.3 }}
+          >
+            {label}
+          </Typography>
+          <TextField
+            size="small"
+            value={hexInput}
+            onChange={handleHexInputChange}
+            onBlur={handleHexInputBlur}
+            onKeyDown={handleHexKeyDown}
+            error={hexError}
+            placeholder="#000000"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: "4px",
+                        background: value,
+                        border: "1px solid #D1D5DB",
+                      }}
+                    />
+                  </InputAdornment>
+                ),
+                sx: {
+                  fontFamily: "monospace",
+                  fontSize: "0.82rem",
+                  height: 34,
+                  borderRadius: "0.5rem",
+                  background: "#F9FAFB",
+                  "& fieldset": { borderColor: hexError ? "#EF4444" : "#D1D5DB" },
+                  "&:hover fieldset": { borderColor: hexError ? "#EF4444" : purpleLight },
+                  "&.Mui-focused fieldset": { borderColor: hexError ? "#EF4444" : purple },
+                },
+              },
+            }}
+            sx={{ width: "100%", maxWidth: 160 }}
+          />
+        </Box>
+      </Box>
+
+      {/* Hidden native color picker */}
+      <input
+        ref={nativePickerRef}
+        type="color"
+        value={value}
+        onChange={handleNativeChange}
+        style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+      />
+
+      {/* Popover with presets */}
+      <Popover
+        open={open}
+        anchorEl={anchorRef.current}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{
+          paper: {
+            sx: {
+              mt: 1,
+              borderRadius: "0.75rem",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
+              border: "1px solid #E5E7EB",
+              p: 1.5,
+              width: 240,
+            },
+          },
+        }}
+      >
+        <Typography
+          variant="caption"
+          color="#9CA3AF"
+          sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, mb: 0.8, display: "block" }}
+        >
+          Preset colors
+        </Typography>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.6, mb: 1.5 }}>
+          {PRESET_COLORS.map(function (hex) {
+            var selected = value.toLowerCase() === hex.toLowerCase();
+            var light = contrastText(hex) === "#000";
+            return (
+              <Box
+                key={hex}
+                onClick={function () { handlePresetClick(hex); }}
+                sx={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "6px",
+                  background: hex,
+                  cursor: "pointer",
+                  border: selected
+                    ? "2px solid " + purple
+                    : light
+                    ? "1px solid #D1D5DB"
+                    : "1px solid transparent",
+                  boxShadow: selected ? "0 0 0 2px " + purple + "44" : "none",
+                  transition: "transform 0.15s, box-shadow 0.15s",
+                  "&:hover": {
+                    transform: "scale(1.15)",
+                    boxShadow: "0 0 0 2px " + purple + "33",
+                  },
+                }}
+              />
+            );
+          })}
+        </Box>
+        <Button
+          size="small"
+          startIcon={<ColorLensIcon sx={{ fontSize: 16 }} />}
+          onClick={function () {
+            if (nativePickerRef.current) nativePickerRef.current.click();
+          }}
+          sx={{
+            width: "100%",
+            borderRadius: "0.5rem",
+            textTransform: "none",
+            fontWeight: 600,
+            fontSize: "0.78rem",
+            color: "#6B7280",
+            border: "1px dashed #D1D5DB",
+            "&:hover": {
+              borderColor: purpleLight,
+              color: purple,
+              background: "#F5F3FF",
+            },
+          }}
+        >
+          Custom color…
+        </Button>
+      </Popover>
+    </Box>
+  );
+}
+
+function ColorPickerGroup({ colors, onColorChange }) {
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, mt: 1 }}>
+      {[
+        { key: "primary", label: "Primary (accent)" },
+        { key: "secondary", label: "Secondary (dark)" },
+        { key: "tertiary", label: "Tertiary (muted)" },
+      ].map(function (c) {
+        return (
+          <ColorPickerRow
+            key={c.key}
+            colorKey={c.key}
+            label={c.label}
+            value={colors[c.key]}
+            onChange={onColorChange}
+          />
+        );
+      })}
+
+      {/* Mini preview strip */}
+      <Box sx={{ display: "flex", gap: 1, mt: 0.5 }}>
+        <Box
+          sx={{
+            px: 2, py: 0.8,
+            borderRadius: "999px",
+            background: colors.primary,
+            color: contrastText(colors.primary),
+            fontWeight: 600,
+            fontSize: "0.75rem",
+          }}
+        >
+          Button
+        </Box>
+        <Box
+          sx={{
+            px: 2, py: 0.8,
+            borderRadius: "999px",
+            background: colors.secondary,
+            color: contrastText(colors.secondary),
+            fontWeight: 600,
+            fontSize: "0.75rem",
+          }}
+        >
+          Footer
+        </Box>
+        <Box
+          sx={{
+            px: 2, py: 0.8,
+            borderRadius: "999px",
+            border: "1px solid",
+            borderColor: colors.tertiary,
+            color: colors.tertiary,
+            fontWeight: 600,
+            fontSize: "0.75rem",
+          }}
+        >
+          Muted
+        </Box>
+      </Box>
     </Box>
   );
 }
@@ -882,84 +1235,7 @@ export default function LaunchStepper({
 
             {/* ── COLOR PICKER ─────────────── */}
             {current.type === "colors" && (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, mt: 1 }}>
-                {[
-                  { key: "primary", label: "Primary (accent)" },
-                  { key: "secondary", label: "Secondary (dark)" },
-                  { key: "tertiary", label: "Tertiary (muted)" },
-                ].map(function (c) {
-                  return (
-                    <Box key={c.key} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <Box
-                        component="input"
-                        type="color"
-                        value={colors[c.key]}
-                        onChange={function (e) { handleColorChange(c.key, e.target.value); }}
-                        sx={{
-                          width: 44,
-                          height: 44,
-                          border: "2px solid #E5E7EB",
-                          borderRadius: "0.5rem",
-                          cursor: "pointer",
-                          background: "none",
-                          p: 0,
-                          "&::-webkit-color-swatch-wrapper": { p: "2px" },
-                          "&::-webkit-color-swatch": { borderRadius: "4px", border: "none" },
-                        }}
-                      />
-                      <Box>
-                        <Typography variant="body2" color="#1F2937" fontWeight={600} sx={{ fontSize: "0.8rem" }}>
-                          {c.label}
-                        </Typography>
-                        <Typography variant="caption" color="#9CA3AF">
-                          {colors[c.key]}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  );
-                })}
-
-                {/* Mini preview strip */}
-                <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-                  <Box
-                    sx={{
-                      px: 2, py: 0.8,
-                      borderRadius: "999px",
-                      background: colors.primary,
-                      color: colors.secondary,
-                      fontWeight: 600,
-                      fontSize: "0.75rem",
-                    }}
-                  >
-                    Button
-                  </Box>
-                  <Box
-                    sx={{
-                      px: 2, py: 0.8,
-                      borderRadius: "999px",
-                      background: colors.secondary,
-                      color: "#fff",
-                      fontWeight: 600,
-                      fontSize: "0.75rem",
-                    }}
-                  >
-                    Footer
-                  </Box>
-                  <Box
-                    sx={{
-                      px: 2, py: 0.8,
-                      borderRadius: "999px",
-                      border: "1px solid",
-                      borderColor: colors.tertiary,
-                      color: colors.tertiary,
-                      fontWeight: 600,
-                      fontSize: "0.75rem",
-                    }}
-                  >
-                    Muted
-                  </Box>
-                </Box>
-              </Box>
+              <ColorPickerGroup colors={colors} onColorChange={handleColorChange} />
             )}
 
             {/* ── IMAGE UPLOAD ──────────────── */}

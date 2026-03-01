@@ -45,12 +45,12 @@ export var steps = [
     id: 3,
     title: "Describe your business.",
     description:
-      "Tell us about your brand, what you offer, and who you serve. The more detail, the better your site copy. Minimum 250 characters.",
+      "Tell us about your brand, what you offer, and who you serve. The more detail, the better your site copy. Minimum 100 characters.",
     key: "description",
     type: "textarea",
     placeholder:
       "e.g. We build AI-powered smart home solutions that make everyday living more convenient, secure, and energy efficient. Our products integrate with all major platforms and are designed for families who value simplicity, safety, and sustainability...",
-    minLength: 250,
+    minLength: 100,
     hints: [
       "Start with what you do, then who it's for, then why it matters",
       "Mention 2-3 things that set you apart from competitors",
