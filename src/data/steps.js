@@ -35,14 +35,6 @@ export var steps = [
   },
   {
     id: 2,
-    title: "Ways to reach you.",
-    description:
-      "Add your contact details so visitors can get in touch. All fields are optional.",
-    key: "contact",
-    type: "contact",
-  },
-  {
-    id: 3,
     title: "Describe your business.",
     description:
       "Tell us about your brand, what you offer, and who you serve. The more detail, the better your site copy. Minimum 100 characters.",
@@ -56,6 +48,14 @@ export var steps = [
       "Mention 2-3 things that set you apart from competitors",
       "Write like you're explaining to a friend, not a boardroom",
     ],
+  },
+  {
+    id: 3,
+    title: "Ways to reach you.",
+    description:
+      "Add your email and phone so visitors can get in touch. Both fields are optional.",
+    key: "contact",
+    type: "contact",
   },
   {
     id: 4,
@@ -75,6 +75,14 @@ export var steps = [
   },
   {
     id: 6,
+    title: "Choose your pages.",
+    description:
+      "Select which pages to include. We've pre-selected what works best based on your answers.",
+    key: "pages",
+    type: "pages",
+  },
+  {
+    id: 7,
     title: "Upload your logo.",
     description:
       "Your logo will appear in the navigation bar and footer. If you skip this, your brand name will be used as text instead.",
@@ -82,7 +90,7 @@ export var steps = [
     type: "logo",
   },
   {
-    id: 7,
+    id: 8,
     title: "Upload images for your site.",
     description:
       "Add 1 to 8 images. The first will be your hero image, the rest fill feature cards and gallery sections.",
@@ -90,7 +98,7 @@ export var steps = [
     type: "images",
   },
   {
-    id: 8,
+    id: 9,
     title: "Review",
     key: "review",
     type: "review",

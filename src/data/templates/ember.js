@@ -1,59 +1,21 @@
 export var name = "Ember";
 export var defaultColors = { primary: "#C2410C", secondary: "#292524", tertiary: "#78716C" };
 
-export var contentFields = [
-  { key: "tagline", label: "Tagline", type: "text", placeholder: "One catchy sentence about your brand" },
-  { key: "heroHeading", label: "Hero Heading", type: "text", placeholder: "Bold attention-grabbing headline" },
-  { key: "ctaText", label: "CTA Button Text", type: "text", placeholder: "Explore" },
-  { key: "ctaUrl", label: "Button Link URL", type: "text", placeholder: "https://yoursite.com/explore", skipGenerate: true },
-  { key: "contactEmail", label: "Contact Email", type: "text", placeholder: "hello@yourbrand.com" },
-  { key: "aboutHeading", label: "About Heading", type: "text", placeholder: "Our Story" },
-  { key: "aboutParagraph", label: "About Paragraph", type: "textarea", placeholder: "A detailed paragraph about your brand and mission" },
-  { key: "processHeading", label: "Process Heading", type: "text", placeholder: "Our Process" },
-  { key: "processTitle1", label: "Step 1 Title", type: "text", placeholder: "Discover" },
-  { key: "processDesc1", label: "Step 1 Description", type: "text", placeholder: "We learn about your vision" },
-  { key: "processTitle2", label: "Step 2 Title", type: "text", placeholder: "Design" },
-  { key: "processDesc2", label: "Step 2 Description", type: "text", placeholder: "We craft the experience" },
-  { key: "processTitle3", label: "Step 3 Title", type: "text", placeholder: "Deliver" },
-  { key: "processDesc3", label: "Step 3 Description", type: "text", placeholder: "We bring it to life" },
-  { key: "portfolioHeading", label: "Portfolio Heading", type: "text", placeholder: "Our Work" },
-  { key: "ctaSectionHeading", label: "CTA Heading", type: "text", placeholder: "Let's Begin Your Journey" },
-];
-
-export var statFields = [];
-
 export var colorElements = [
   { key: "buttonColorAssign", label: "Buttons", selector: ".btn-primary" },
   { key: "processAccentColorAssign", label: "Process Steps", selector: ".process-number" },
+  { key: "ctaSectionColorAssign", label: "CTA Section", selector: ".bottom-cta", defaultAssign: "secondary" },
   { key: "footerBgColorAssign", label: "Footer Background", selector: "footer" },
 ];
 
-export var imageSlots = {
-  hero: true,
-  featureImages: 0,
-  hasGallery: false,
-  hasPortfolio: true,
-  portfolioStartIndex: 1,
-};
+/* ── Shared HTML fragments ─────────────────────────────── */
 
-export var sections = [
-  { heading: "Hero", purpose: "Elegant, editorial-style hero with serif typography", fields: ["heroHeading", "tagline", "ctaText"] },
-  { heading: "About", purpose: "Brand story and mission told in the brand's own voice", fields: ["aboutHeading", "aboutParagraph"] },
-  { heading: "Process", purpose: "3 steps showing the creative or service delivery process", fields: ["processHeading", "processTitle1", "processDesc1", "processTitle2", "processDesc2", "processTitle3", "processDesc3"] },
-  { heading: "Portfolio", purpose: "Showcase of work, products, or projects", fields: ["portfolioHeading"] },
-  { heading: "CTA", purpose: "Final call to action to convert visitors", fields: ["ctaSectionHeading"] },
-];
+var fontLinks =
+  '<link rel="preconnect" href="https://fonts.googleapis.com">' +
+  '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
+  '<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">';
 
-export var htmlTemplate = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{brandName}}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
+var sharedCss = `
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -67,6 +29,8 @@ export var htmlTemplate = `<!DOCTYPE html>
       --footer-bg: {{footerBg}};
       --footer-text-bright: {{footerTextBright}};
       --footer-text-muted: {{footerTextMuted}};
+      --cta-section-bg: {{ctaSectionBg}};
+      --cta-section-text: {{ctaSectionText}};
       --bg: #FFFAF5;
       --bg-card: #FFFFFF;
       --text: #292524;
@@ -121,6 +85,7 @@ export var htmlTemplate = `<!DOCTYPE html>
       font-size: 0.75rem;
     }
     .nav-links a:hover { color: var(--text); }
+    .nav-links a.nav-active { color: var(--text); font-weight: 600; }
 
     /* ── HERO ────────────────────────────────── */
     .hero {
@@ -343,8 +308,8 @@ export var htmlTemplate = `<!DOCTYPE html>
     .bottom-cta {
       padding: 7rem 5vw;
       text-align: center;
-      background: var(--secondary);
-      color: var(--bg);
+      background: var(--cta-section-bg);
+      color: var(--cta-section-text);
     }
     .bottom-cta h2 {
       font-family: var(--font-serif);
@@ -354,15 +319,163 @@ export var htmlTemplate = `<!DOCTYPE html>
       letter-spacing: -0.02em;
       max-width: 640px;
       margin: 0 auto 1.25rem;
-      color: var(--bg);
+      color: var(--cta-section-text);
     }
     .bottom-cta p {
-      color: #A8A29E;
+      color: var(--cta-section-text); opacity: 0.7;
       max-width: 520px;
       margin: 0 auto 2.5rem;
       line-height: 1.8;
       font-size: 1.05rem;
     }
+
+    /* ── PAGE HERO (inner pages) ─────────────── */
+    .page-hero {
+      padding: 5rem 5vw 3rem;
+      max-width: 860px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .page-hero h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(2.25rem, 4vw, 3.25rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+      color: var(--text);
+      line-height: 1.15;
+    }
+    .page-hero p {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.8;
+    }
+
+    /* ── CONTENT SECTIONS (inner pages) ──────── */
+    .content-section {
+      padding: 4rem 5vw;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .content-section h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.75rem, 3vw, 2.25rem);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 1rem;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .content-section p {
+      font-size: 1.05rem;
+      color: var(--muted);
+      line-height: 1.9;
+    }
+
+    /* ── VALUES GRID (about page) ────────────── */
+    .values-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      padding: 0 5vw 4rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .value-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 2.25rem;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.05);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .value-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+    }
+    .value-card h3 {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: var(--text);
+    }
+    .value-card p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    /* ── CONTACT CARDS ───────────────────────── */
+    .contact-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      padding: 0 5vw 4rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .contact-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 2.25rem;
+      text-align: center;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.05);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .contact-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+    }
+    .contact-card .contact-icon {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+    .contact-card h3 {
+      font-family: var(--font-serif);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+    .contact-card p, .contact-card a {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .contact-card a:hover { color: var(--text); }
+
+    .contact-social {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      padding: 0 5vw 4rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .contact-social a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.6rem 1.2rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      border: 1px solid rgba(0,0,0,0.1);
+      transition: border-color 0.25s ease, color 0.25s ease;
+    }
+    .contact-social a:hover { border-color: var(--btn-bg); color: var(--text); }
 
     /* ── FOOTER ───────────────────────────────── */
     footer {
@@ -430,6 +543,8 @@ export var htmlTemplate = `<!DOCTYPE html>
       .portfolio { padding: 5rem 5vw; }
       .portfolio-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
       .bottom-cta { padding: 5rem 5vw; }
+      .values-grid { grid-template-columns: 1fr; }
+      .contact-cards { grid-template-columns: 1fr; }
       footer { flex-direction: column; }
       .footer-bottom { flex-direction: column; gap: 0.5rem; text-align: center; }
     }
@@ -448,116 +563,295 @@ export var htmlTemplate = `<!DOCTYPE html>
       .bottom-cta { padding: 3.5rem 4vw; }
       footer { padding: 3rem 4vw 1.5rem; }
       .btn { min-height: 48px; padding: 0.9rem 1.75rem; }
+      .page-hero { padding: 3rem 4vw 2rem; }
+      .content-section { padding: 2rem 4vw; }
+      .values-grid { padding: 0 4vw 3rem; }
+      .contact-cards { padding: 0 4vw 3rem; }
+      .contact-social { padding: 0 4vw 3rem; }
     }
-  </style>
-</head>
-<body>
+`;
 
-  <!-- NAV -->
-  <nav>
-    {{logoTag}}
-    <div class="nav-links">
-      <a href="#about">About</a>
-      <a href="#portfolio">Work</a>
-      <a href="mailto:{{contactEmail}}" data-field="contactEmail">Contact</a>
-    </div>
-  </nav>
+var navHtml =
+  '<nav>\n' +
+  '    {{logoTag}}\n' +
+  '    <div class="nav-links">\n' +
+  '      {{navLinks}}\n' +
+  '    </div>\n' +
+  '  </nav>';
 
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-text">
-      <h1 data-field="heroHeading">{{heroHeading}}</h1>
-      <p data-field="tagline">{{tagline}}</p>
-      <a class="btn btn-primary" data-field="ctaText" href="{{ctaUrl}}">
-        {{ctaText}} <span class="arrow">&rarr;</span>
-      </a>
-    </div>
-    <div class="hero-img-wrap">
-      {{heroImageTag}}
-    </div>
-  </section>
+var footerHtml =
+  '<footer>\n' +
+  '    <div class="footer-brand">\n' +
+  '      {{footerLogoTag}}\n' +
+  '      <p data-field="tagline">{{tagline}}</p>\n' +
+  '    </div>\n' +
+  '    <div class="footer-links">\n' +
+  '      <h4>Navigation</h4>\n' +
+  '      {{footerNavLinks}}\n' +
+  '    </div>\n' +
+  '    <div class="footer-links">\n' +
+  '      <h4>Connect</h4>\n' +
+  '      <a href="mailto:{{contactEmail}}" data-field="contactEmail">Email</a>\n' +
+  '      <a href="#">Newsletter</a>\n' +
+  '      <a href="#">Social</a>\n' +
+  '    </div>\n' +
+  '    <div class="footer-links">\n' +
+  '      <h4>Legal</h4>\n' +
+  '      <a href="#">Privacy Policy</a>\n' +
+  '      <a href="#">Terms of Service</a>\n' +
+  '    </div>\n' +
+  '    <div class="footer-bottom">\n' +
+  '      <span>Privacy Policy &middot; Terms</span>\n' +
+  '      <span>&copy; {{brandName}} 2025. All rights reserved.</span>\n' +
+  '    </div>\n' +
+  '  </footer>';
 
-  <!-- ABOUT -->
-  <section class="about" id="about">
-    <span class="section-label">About</span>
-    <h2 data-field="aboutHeading">{{aboutHeading}}</h2>
-    <hr class="about-divider" />
-    <p data-field="aboutParagraph">{{aboutParagraph}}</p>
-  </section>
+function makePage(bodyHtml, extraCss) {
+  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n' +
+    '  <meta charset="UTF-8" />\n' +
+    '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n' +
+    '  <title>{{brandName}}</title>\n' +
+    '  ' + fontLinks + '\n' +
+    '  <style>' + sharedCss + (extraCss || '') + '\n  </style>\n' +
+    '</head>\n<body>\n\n  ' +
+    navHtml + '\n\n' +
+    bodyHtml + '\n\n  ' +
+    footerHtml + '\n\n</body>\n</html>';
+}
 
-  <!-- PROCESS -->
-  <section class="process" id="process">
-    <div class="process-header">
-      <span class="section-label">How We Work</span>
-      <h2 data-field="processHeading">{{processHeading}}</h2>
-    </div>
-    <div class="process-steps">
-      <div class="process-step">
-        <div class="process-number">1</div>
-        <h3 data-field="processTitle1">{{processTitle1}}</h3>
-        <p data-field="processDesc1">{{processDesc1}}</p>
-      </div>
-      <div class="process-step">
-        <div class="process-number">2</div>
-        <h3 data-field="processTitle2">{{processTitle2}}</h3>
-        <p data-field="processDesc2">{{processDesc2}}</p>
-      </div>
-      <div class="process-step">
-        <div class="process-number">3</div>
-        <h3 data-field="processTitle3">{{processTitle3}}</h3>
-        <p data-field="processDesc3">{{processDesc3}}</p>
-      </div>
-    </div>
-  </section>
+export var customPageShell = makePage('  {{customPageContent}}');
 
-  <!-- PORTFOLIO -->
-  <section class="portfolio" id="portfolio">
-    <div class="portfolio-header">
-      <span class="section-label">Selected Work</span>
-      <h2 data-field="portfolioHeading">{{portfolioHeading}}</h2>
-    </div>
-    <div class="portfolio-grid">
-      {{portfolioImages}}
-    </div>
-  </section>
+/* ── Page definitions ──────────────────────────────────── */
 
-  <!-- BOTTOM CTA -->
-  <section class="bottom-cta">
-    <h2 data-field="ctaSectionHeading">{{ctaSectionHeading}}</h2>
-    <p data-field="tagline">{{tagline}}</p>
-    <a class="btn btn-primary" data-field="ctaText" href="{{ctaUrl}}">
-      {{ctaText}} <span class="arrow">&rarr;</span>
-    </a>
-  </section>
+var homePage = {
+  id: "home",
+  title: "Home",
+  filename: "index.html",
+  contentFields: [
+    { key: "tagline", label: "Tagline", type: "text", placeholder: "One catchy sentence about your brand" },
+    { key: "heroHeading", label: "Hero Heading", type: "text", placeholder: "Bold attention-grabbing headline" },
+    { key: "ctaText", label: "CTA Button Text", type: "text", placeholder: "Explore" },
+    { key: "ctaUrl", label: "Button Link URL", type: "text", placeholder: "https://yoursite.com/explore", skipGenerate: true },
+    { key: "contactEmail", label: "Contact Email", type: "text", placeholder: "hello@yourbrand.com" },
+    { key: "aboutHeading", label: "About Heading", type: "text", placeholder: "Our Story" },
+    { key: "aboutParagraph", label: "About Paragraph", type: "textarea", placeholder: "A detailed paragraph about your brand and mission" },
+    { key: "processHeading", label: "Process Heading", type: "text", placeholder: "Our Process" },
+    { key: "processTitle1", label: "Step 1 Title", type: "text", placeholder: "Discover" },
+    { key: "processDesc1", label: "Step 1 Description", type: "text", placeholder: "We learn about your vision" },
+    { key: "processTitle2", label: "Step 2 Title", type: "text", placeholder: "Design" },
+    { key: "processDesc2", label: "Step 2 Description", type: "text", placeholder: "We craft the experience" },
+    { key: "processTitle3", label: "Step 3 Title", type: "text", placeholder: "Deliver" },
+    { key: "processDesc3", label: "Step 3 Description", type: "text", placeholder: "We bring it to life" },
+    { key: "portfolioHeading", label: "Portfolio Heading", type: "text", placeholder: "Our Work" },
+    { key: "ctaSectionHeading", label: "CTA Heading", type: "text", placeholder: "Let's Begin Your Journey" },
+  ],
+  statFields: [],
+  sections: [
+    { heading: "Hero", purpose: "Elegant, editorial-style hero with serif typography", fields: ["heroHeading", "tagline", "ctaText"] },
+    { heading: "About", purpose: "Brand story and mission told in the brand's own voice", fields: ["aboutHeading", "aboutParagraph"] },
+    { heading: "Process", purpose: "3 steps showing the creative or service delivery process", fields: ["processHeading", "processTitle1", "processDesc1", "processTitle2", "processDesc2", "processTitle3", "processDesc3"] },
+    { heading: "Portfolio", purpose: "Showcase of work, products, or projects", fields: ["portfolioHeading"] },
+    { heading: "CTA", purpose: "Final call to action to convert visitors", fields: ["ctaSectionHeading"] },
+  ],
+  imageSlots: {
+    hero: true,
+    featureImages: 0,
+    hasGallery: false,
+    hasPortfolio: true,
+    portfolioStartIndex: 1,
+  },
+  htmlTemplate: makePage(
+    '  <!-- HERO -->\n' +
+    '  <section class="hero">\n' +
+    '    <div class="hero-text">\n' +
+    '      <h1 data-field="heroHeading">{{heroHeading}}</h1>\n' +
+    '      <p data-field="tagline">{{tagline}}</p>\n' +
+    '      <a class="btn btn-primary" data-field="ctaText" href="{{ctaUrl}}">\n' +
+    '        {{ctaText}} <span class="arrow">&rarr;</span>\n' +
+    '      </a>\n' +
+    '    </div>\n' +
+    '    <div class="hero-img-wrap">\n' +
+    '      {{heroImageTag}}\n' +
+    '    </div>\n' +
+    '  </section>\n\n' +
 
-  <!-- FOOTER -->
-  <footer>
-    <div class="footer-brand">
-      {{footerLogoTag}}
-      <p data-field="tagline">{{tagline}}</p>
-    </div>
-    <div class="footer-links">
-      <h4>Navigation</h4>
-      <a href="#about">About</a>
-      <a href="#process">Process</a>
-      <a href="#portfolio">Work</a>
-    </div>
-    <div class="footer-links">
-      <h4>Connect</h4>
-      <a href="mailto:{{contactEmail}}" data-field="contactEmail">Email</a>
-      <a href="#">Newsletter</a>
-      <a href="#">Social</a>
-    </div>
-    <div class="footer-links">
-      <h4>Legal</h4>
-      <a href="#">Privacy Policy</a>
-      <a href="#">Terms of Service</a>
-    </div>
-    <div class="footer-bottom">
-      <span>Privacy Policy &middot; Terms</span>
-      <span>&copy; {{brandName}} 2025. All rights reserved.</span>
-    </div>
-  </footer>
+    '  <!-- ABOUT -->\n' +
+    '  <section class="about" id="about">\n' +
+    '    <span class="section-label">About</span>\n' +
+    '    <h2 data-field="aboutHeading">{{aboutHeading}}</h2>\n' +
+    '    <hr class="about-divider" />\n' +
+    '    <p data-field="aboutParagraph">{{aboutParagraph}}</p>\n' +
+    '  </section>\n\n' +
 
-</body>
-</html>`;
+    '  <!-- PROCESS -->\n' +
+    '  <section class="process" id="process">\n' +
+    '    <div class="process-header">\n' +
+    '      <span class="section-label">How We Work</span>\n' +
+    '      <h2 data-field="processHeading">{{processHeading}}</h2>\n' +
+    '    </div>\n' +
+    '    <div class="process-steps">\n' +
+    '      <div class="process-step">\n' +
+    '        <div class="process-number">1</div>\n' +
+    '        <h3 data-field="processTitle1">{{processTitle1}}</h3>\n' +
+    '        <p data-field="processDesc1">{{processDesc1}}</p>\n' +
+    '      </div>\n' +
+    '      <div class="process-step">\n' +
+    '        <div class="process-number">2</div>\n' +
+    '        <h3 data-field="processTitle2">{{processTitle2}}</h3>\n' +
+    '        <p data-field="processDesc2">{{processDesc2}}</p>\n' +
+    '      </div>\n' +
+    '      <div class="process-step">\n' +
+    '        <div class="process-number">3</div>\n' +
+    '        <h3 data-field="processTitle3">{{processTitle3}}</h3>\n' +
+    '        <p data-field="processDesc3">{{processDesc3}}</p>\n' +
+    '      </div>\n' +
+    '    </div>\n' +
+    '  </section>\n\n' +
+
+    '  <!-- PORTFOLIO -->\n' +
+    '  <section class="portfolio" id="portfolio">\n' +
+    '    <div class="portfolio-header">\n' +
+    '      <span class="section-label">Selected Work</span>\n' +
+    '      <h2 data-field="portfolioHeading">{{portfolioHeading}}</h2>\n' +
+    '    </div>\n' +
+    '    <div class="portfolio-grid">\n' +
+    '      {{portfolioImages}}\n' +
+    '    </div>\n' +
+    '  </section>\n\n' +
+
+    '  <!-- BOTTOM CTA -->\n' +
+    '  <section class="bottom-cta">\n' +
+    '    <h2 data-field="ctaSectionHeading">{{ctaSectionHeading}}</h2>\n' +
+    '    <p data-field="tagline">{{tagline}}</p>\n' +
+    '    <a class="btn btn-primary" data-field="ctaText" href="{{ctaUrl}}">\n' +
+    '      {{ctaText}} <span class="arrow">&rarr;</span>\n' +
+    '    </a>\n' +
+    '  </section>'
+  ),
+};
+
+var aboutPage = {
+  id: "about",
+  title: "About",
+  filename: "about.html",
+  contentFields: [
+    { key: "aboutPageHeading", label: "About Heading", type: "text", placeholder: "Our Story" },
+    { key: "aboutPageIntro", label: "About Introduction", type: "textarea", placeholder: "A few sentences introducing your brand story" },
+    { key: "aboutMissionHeading", label: "Mission Heading", type: "text", placeholder: "Our Mission" },
+    { key: "aboutMissionText", label: "Mission Text", type: "textarea", placeholder: "Describe your brand's mission" },
+    { key: "aboutValueTitle1", label: "Value 1 Title", type: "text", placeholder: "Quality" },
+    { key: "aboutValueDesc1", label: "Value 1 Description", type: "text", placeholder: "We never compromise on quality" },
+    { key: "aboutValueTitle2", label: "Value 2 Title", type: "text", placeholder: "Innovation" },
+    { key: "aboutValueDesc2", label: "Value 2 Description", type: "text", placeholder: "Always pushing boundaries" },
+    { key: "aboutValueTitle3", label: "Value 3 Title", type: "text", placeholder: "Community" },
+    { key: "aboutValueDesc3", label: "Value 3 Description", type: "text", placeholder: "Building something bigger together" },
+  ],
+  statFields: [],
+  sections: [
+    { heading: "About Hero", purpose: "Welcoming heading and introduction for the about page", fields: ["aboutPageHeading", "aboutPageIntro"] },
+    { heading: "Mission", purpose: "The brand's mission, purpose, and driving philosophy", fields: ["aboutMissionHeading", "aboutMissionText"] },
+    { heading: "Values", purpose: "3 core values or principles the brand stands for", fields: ["aboutValueTitle1", "aboutValueDesc1", "aboutValueTitle2", "aboutValueDesc2", "aboutValueTitle3", "aboutValueDesc3"] },
+  ],
+  imageSlots: {},
+  htmlTemplate: makePage(
+    '  <!-- PAGE HERO -->\n' +
+    '  <section class="page-hero">\n' +
+    '    <span class="section-label">About Us</span>\n' +
+    '    <h1 data-field="aboutPageHeading">{{aboutPageHeading}}</h1>\n' +
+    '    <p data-field="aboutPageIntro">{{aboutPageIntro}}</p>\n' +
+    '  </section>\n\n' +
+
+    '  <!-- MISSION -->\n' +
+    '  <section class="content-section">\n' +
+    '    <h2 data-field="aboutMissionHeading">{{aboutMissionHeading}}</h2>\n' +
+    '    <p data-field="aboutMissionText">{{aboutMissionText}}</p>\n' +
+    '  </section>\n\n' +
+
+    '  <!-- VALUES -->\n' +
+    '  <div class="values-grid">\n' +
+    '    <div class="value-card">\n' +
+    '      <h3 data-field="aboutValueTitle1">{{aboutValueTitle1}}</h3>\n' +
+    '      <p data-field="aboutValueDesc1">{{aboutValueDesc1}}</p>\n' +
+    '    </div>\n' +
+    '    <div class="value-card">\n' +
+    '      <h3 data-field="aboutValueTitle2">{{aboutValueTitle2}}</h3>\n' +
+    '      <p data-field="aboutValueDesc2">{{aboutValueDesc2}}</p>\n' +
+    '    </div>\n' +
+    '    <div class="value-card">\n' +
+    '      <h3 data-field="aboutValueTitle3">{{aboutValueTitle3}}</h3>\n' +
+    '      <p data-field="aboutValueDesc3">{{aboutValueDesc3}}</p>\n' +
+    '    </div>\n' +
+    '  </div>\n\n' +
+
+    '  <!-- BOTTOM CTA -->\n' +
+    '  <section class="bottom-cta">\n' +
+    '    <h2 data-field="ctaSectionHeading">{{ctaSectionHeading}}</h2>\n' +
+    '    <p data-field="tagline">{{tagline}}</p>\n' +
+    '    <a class="btn btn-primary" data-field="ctaText" href="{{ctaUrl}}">\n' +
+    '      {{ctaText}} <span class="arrow">&rarr;</span>\n' +
+    '    </a>\n' +
+    '  </section>'
+  ),
+};
+
+var contactPage = {
+  id: "contact",
+  title: "Contact",
+  filename: "contact.html",
+  contentFields: [
+    { key: "contactPageHeading", label: "Contact Heading", type: "text", placeholder: "Get In Touch" },
+    { key: "contactPageSubheading", label: "Contact Subheading", type: "text", placeholder: "We'd love to hear from you" },
+  ],
+  statFields: [],
+  sections: [
+    { heading: "Contact Header", purpose: "Warm, inviting heading for the contact page", fields: ["contactPageHeading", "contactPageSubheading"] },
+  ],
+  imageSlots: {},
+  htmlTemplate: makePage(
+    '  <!-- PAGE HERO -->\n' +
+    '  <section class="page-hero">\n' +
+    '    <span class="section-label">Contact</span>\n' +
+    '    <h1 data-field="contactPageHeading">{{contactPageHeading}}</h1>\n' +
+    '    <p data-field="contactPageSubheading">{{contactPageSubheading}}</p>\n' +
+    '  </section>\n\n' +
+
+    '  <!-- CONTACT DETAILS -->\n' +
+    '  <div class="contact-cards">\n' +
+    '    <div class="contact-card">\n' +
+    '      <div class="contact-icon">&#9993;</div>\n' +
+    '      <h3>Email</h3>\n' +
+    '      <a href="mailto:{{contactEmail}}" data-field="contactEmail">{{contactEmail}}</a>\n' +
+    '    </div>\n' +
+    '    <div class="contact-card">\n' +
+    '      <div class="contact-icon">&#9742;</div>\n' +
+    '      <h3>Phone</h3>\n' +
+    '      <p data-field="contactPhone">{{contactPhone}}</p>\n' +
+    '    </div>\n' +
+    '  </div>\n\n' +
+
+    '  <!-- SOCIAL -->\n' +
+    '  <div class="contact-social">\n' +
+    '    {{socialInstagram}}\n' +
+    '    {{socialFacebook}}\n' +
+    '    {{socialLinkedin}}\n' +
+    '  </div>\n\n' +
+
+    '  <!-- BOTTOM CTA -->\n' +
+    '  <section class="bottom-cta">\n' +
+    '    <h2 data-field="ctaSectionHeading">{{ctaSectionHeading}}</h2>\n' +
+    '    <a class="btn btn-primary" data-field="ctaText" href="{{ctaUrl}}">\n' +
+    '      {{ctaText}} <span class="arrow">&rarr;</span>\n' +
+    '    </a>\n' +
+    '  </section>'
+  ),
+};
+
+/* ── Exports ───────────────────────────────────────────── */
+
+export var pages = [homePage, aboutPage, contactPage];
+
+/* Aggregated fields across all pages (for Gemini schema / AdvancedEditor) */
+export var contentFields = [].concat(homePage.contentFields, aboutPage.contentFields, contactPage.contentFields);
+export var statFields = [];
+export var sections = [].concat(homePage.sections, aboutPage.sections, contactPage.sections);
+export var imageSlots = homePage.imageSlots;

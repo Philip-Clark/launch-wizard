@@ -11,10 +11,7 @@ import {
   Fade,
   CircularProgress,
   Collapse,
-  Popover,
-  InputAdornment,
 } from "@mui/material";
-import ColorLensIcon from "@mui/icons-material/ColorLens";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
@@ -22,8 +19,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import AdvancedEditor from "./AdvancedEditor";
+import ColorPicker from "./ColorPicker";
 import InputHint from "./InputHint";
 import { steps } from "../data/steps";
+import { recommendPages } from "../data/pageRecommender";
+import { PAGE_TYPES, isCustomPage } from "../data/pageTypes";
 
 /* ── Light-theme style tokens ─────────────────────────────── */
 var card = {
@@ -93,8 +93,11 @@ function CompletionScreen(props) {
   var colors = props.colors;
   var template = props.template;
   var onHighlight = props.onHighlight;
-  var focusField = props.focusField;
-  var onClearFocusField = props.onClearFocusField;
+  var selectedElement = props.selectedElement;
+  var setSelectedElement = props.setSelectedElement;
+  var activePage = props.activePage;
+  var setActivePage = props.setActivePage;
+  var selectedPages = props.selectedPages;
 
   var stateOpen = useState(false);
   var fineTuneOpen = stateOpen[0];
@@ -102,8 +105,8 @@ function CompletionScreen(props) {
 
   /* Auto-expand when a preview field is clicked */
   useEffect(function () {
-    if (focusField) setFineTuneOpen(true);
-  }, [focusField]);
+    if (selectedElement) setFineTuneOpen(true);
+  }, [selectedElement]);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -187,8 +190,11 @@ function CompletionScreen(props) {
             colors={colors}
             template={template}
             onHighlight={onHighlight}
-            focusField={focusField}
-            onClearFocusField={onClearFocusField}
+            selectedElement={selectedElement}
+            setSelectedElement={setSelectedElement}
+            activePage={activePage}
+            setActivePage={setActivePage}
+            selectedPages={selectedPages}
           />
         </Box>
       </Collapse>
@@ -197,25 +203,6 @@ function CompletionScreen(props) {
 }
 
 /* ── Preset color palettes ──────────────────────────────── */
-var PRESET_COLORS = [
-  "#D4E157", "#F44336", "#E91E63", "#9C27B0", "#673AB7",
-  "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", "#009688",
-  "#4CAF50", "#8BC34A", "#CDDC39", "#FFC107", "#FF9800",
-  "#FF5722", "#795548", "#607D8B", "#1a1a2e", "#16213e",
-  "#0f3460", "#e94560", "#f5f5f5", "#333333", "#6b7280",
-  "#000000", "#FFFFFF",
-];
-
-function isValidHex(hex) {
-  return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(hex);
-}
-
-function normalizeHex(hex) {
-  if (hex.length === 4) {
-    return "#" + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
-  }
-  return hex;
-}
 
 /* Decide if white or black text for contrast */
 function contrastText(hex) {
@@ -228,261 +215,6 @@ function contrastText(hex) {
   return lum > 0.6 ? "#000" : "#fff";
 }
 
-function ColorPickerRow({ colorKey, label, value, onChange }) {
-  var stateOpen = useState(false);
-  var open = stateOpen[0];
-  var setOpen = stateOpen[1];
-
-  var stateHexInput = useState(value);
-  var hexInput = stateHexInput[0];
-  var setHexInput = stateHexInput[1];
-
-  var stateHexError = useState(false);
-  var hexError = stateHexError[0];
-  var setHexError = stateHexError[1];
-
-  var anchorRef = useRef(null);
-  var nativePickerRef = useRef(null);
-
-  /* Sync local hex input when external value changes */
-  useEffect(function () {
-    setHexInput(value);
-    setHexError(false);
-  }, [value]);
-
-  function handleSwatchClick() {
-    setOpen(function (prev) { return !prev; });
-  }
-
-  function handleClose() {
-    setOpen(false);
-  }
-
-  function handlePresetClick(hex) {
-    onChange(colorKey, hex);
-    setOpen(false);
-  }
-
-  function handleNativeChange(e) {
-    onChange(colorKey, e.target.value);
-  }
-
-  function handleHexInputChange(e) {
-    var raw = e.target.value;
-    /* Ensure # prefix */
-    if (raw.length > 0 && raw[0] !== "#") raw = "#" + raw;
-    /* Limit to 7 chars */
-    if (raw.length > 7) raw = raw.slice(0, 7);
-    setHexInput(raw);
-
-    if (isValidHex(raw)) {
-      setHexError(false);
-      onChange(colorKey, normalizeHex(raw));
-    } else {
-      setHexError(raw.length >= 4);
-    }
-  }
-
-  function handleHexInputBlur() {
-    if (isValidHex(hexInput)) {
-      onChange(colorKey, normalizeHex(hexInput));
-      setHexError(false);
-    } else {
-      setHexInput(value);
-      setHexError(false);
-    }
-  }
-
-  function handleHexKeyDown(e) {
-    if (e.key === "Enter") {
-      e.target.blur();
-    }
-  }
-
-  var isLight = contrastText(value) === "#000";
-
-  return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-        {/* Color swatch button */}
-        <Box
-          ref={anchorRef}
-          onClick={handleSwatchClick}
-          sx={{
-            width: 44,
-            height: 44,
-            minWidth: 44,
-            borderRadius: "0.625rem",
-            background: value,
-            border: isLight ? "2px solid #D1D5DB" : "2px solid transparent",
-            cursor: "pointer",
-            transition: "box-shadow 0.2s, border-color 0.2s",
-            boxShadow: open
-              ? "0 0 0 3px " + purple + "44"
-              : "0 1px 3px rgba(0,0,0,0.1)",
-            "&:hover": {
-              boxShadow: "0 0 0 3px " + purple + "33",
-            },
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <ColorLensIcon
-            sx={{
-              fontSize: 20,
-              color: contrastText(value),
-              opacity: 0.5,
-              transition: "opacity 0.2s",
-              ".MuiBox-root:hover &": { opacity: 0.8 },
-            }}
-          />
-        </Box>
-
-        {/* Label + hex input */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
-            variant="body2"
-            color="#1F2937"
-            fontWeight={600}
-            sx={{ fontSize: "0.8rem", mb: 0.3 }}
-          >
-            {label}
-          </Typography>
-          <TextField
-            size="small"
-            value={hexInput}
-            onChange={handleHexInputChange}
-            onBlur={handleHexInputBlur}
-            onKeyDown={handleHexKeyDown}
-            error={hexError}
-            placeholder="#000000"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Box
-                      sx={{
-                        width: 16,
-                        height: 16,
-                        borderRadius: "4px",
-                        background: value,
-                        border: "1px solid #D1D5DB",
-                      }}
-                    />
-                  </InputAdornment>
-                ),
-                sx: {
-                  fontFamily: "monospace",
-                  fontSize: "0.82rem",
-                  height: 34,
-                  borderRadius: "0.5rem",
-                  background: "#F9FAFB",
-                  "& fieldset": { borderColor: hexError ? "#EF4444" : "#D1D5DB" },
-                  "&:hover fieldset": { borderColor: hexError ? "#EF4444" : purpleLight },
-                  "&.Mui-focused fieldset": { borderColor: hexError ? "#EF4444" : purple },
-                },
-              },
-            }}
-            sx={{ width: "100%", maxWidth: 160 }}
-          />
-        </Box>
-      </Box>
-
-      {/* Hidden native color picker */}
-      <input
-        ref={nativePickerRef}
-        type="color"
-        value={value}
-        onChange={handleNativeChange}
-        style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
-      />
-
-      {/* Popover with presets */}
-      <Popover
-        open={open}
-        anchorEl={anchorRef.current}
-        onClose={handleClose}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-        slotProps={{
-          paper: {
-            sx: {
-              mt: 1,
-              borderRadius: "0.75rem",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
-              border: "1px solid #E5E7EB",
-              p: 1.5,
-              width: 240,
-            },
-          },
-        }}
-      >
-        <Typography
-          variant="caption"
-          color="#9CA3AF"
-          sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, mb: 0.8, display: "block" }}
-        >
-          Preset colors
-        </Typography>
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.6, mb: 1.5 }}>
-          {PRESET_COLORS.map(function (hex) {
-            var selected = value.toLowerCase() === hex.toLowerCase();
-            var light = contrastText(hex) === "#000";
-            return (
-              <Box
-                key={hex}
-                onClick={function () { handlePresetClick(hex); }}
-                sx={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "6px",
-                  background: hex,
-                  cursor: "pointer",
-                  border: selected
-                    ? "2px solid " + purple
-                    : light
-                    ? "1px solid #D1D5DB"
-                    : "1px solid transparent",
-                  boxShadow: selected ? "0 0 0 2px " + purple + "44" : "none",
-                  transition: "transform 0.15s, box-shadow 0.15s",
-                  "&:hover": {
-                    transform: "scale(1.15)",
-                    boxShadow: "0 0 0 2px " + purple + "33",
-                  },
-                }}
-              />
-            );
-          })}
-        </Box>
-        <Button
-          size="small"
-          startIcon={<ColorLensIcon sx={{ fontSize: 16 }} />}
-          onClick={function () {
-            if (nativePickerRef.current) nativePickerRef.current.click();
-          }}
-          sx={{
-            width: "100%",
-            borderRadius: "0.5rem",
-            textTransform: "none",
-            fontWeight: 600,
-            fontSize: "0.78rem",
-            color: "#6B7280",
-            border: "1px dashed #D1D5DB",
-            "&:hover": {
-              borderColor: purpleLight,
-              color: purple,
-              background: "#F5F3FF",
-            },
-          }}
-        >
-          Custom color…
-        </Button>
-      </Popover>
-    </Box>
-  );
-}
-
 function ColorPickerGroup({ colors, onColorChange }) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, mt: 1 }}>
@@ -492,12 +224,11 @@ function ColorPickerGroup({ colors, onColorChange }) {
         { key: "tertiary", label: "Tertiary (muted)" },
       ].map(function (c) {
         return (
-          <ColorPickerRow
+          <ColorPicker
             key={c.key}
-            colorKey={c.key}
             label={c.label}
             value={colors[c.key]}
-            onChange={onColorChange}
+            onChange={function (hex) { onColorChange(c.key, hex); }}
           />
         );
       })}
@@ -595,8 +326,11 @@ export default function LaunchStepper({
   setAdvanced,
   template,
   onHighlight,
-  focusField,
-  onClearFocusField,
+  selectedElement,
+  setSelectedElement,
+  activePage,
+  setActivePage,
+  suggestedPages,
 }) {
   var fileInputRef = useRef(null);
   var logoInputRef = useRef(null);
@@ -668,6 +402,19 @@ export default function LaunchStepper({
     setHintAnchorEl(null);
     setActiveHints([]);
   }, [activeStep]);
+
+  /* Auto-recommend pages when entering the pages step for the first time */
+  useEffect(function () {
+    if (current && current.type === "pages" && !formData.selectedPages && template && template.pages) {
+      // Use AI suggestions if available, otherwise fall back to local recommender
+      if (suggestedPages && suggestedPages.length > 0) {
+        handleFormField("selectedPages", suggestedPages);
+      } else {
+        var recommended = recommendPages(formData, template);
+        handleFormField("selectedPages", recommended);
+      }
+    }
+  }, [activeStep, suggestedPages]);
 
   function handleTextChange(e) {
     setFormData(function (prev) {
@@ -868,8 +615,11 @@ export default function LaunchStepper({
             colors={colors}
             template={template}
             onHighlight={onHighlight}
-            focusField={focusField}
-            onClearFocusField={onClearFocusField}
+            selectedElement={selectedElement}
+            setSelectedElement={setSelectedElement}
+            activePage={activePage}
+            setActivePage={setActivePage}
+            selectedPages={formData.selectedPages}
           />
         ) : (
           <LoadingScreen />
@@ -1105,39 +855,6 @@ export default function LaunchStepper({
                   sx={inputSx}
                   slotProps={{ inputLabel: { shrink: true, sx: { color: "#6B7280", fontSize: "0.85rem" } } }}
                 />
-                <TextField
-                  fullWidth
-                  placeholder="https://instagram.com/yourbrand"
-                  label="Instagram"
-                  value={formData.socialInstagram || ""}
-                  onChange={function (e) { handleFormField("socialInstagram", e.target.value); }}
-                  variant="outlined"
-                  size="small"
-                  sx={inputSx}
-                  slotProps={{ inputLabel: { shrink: true, sx: { color: "#6B7280", fontSize: "0.85rem" } } }}
-                />
-                <TextField
-                  fullWidth
-                  placeholder="https://facebook.com/yourbrand"
-                  label="Facebook"
-                  value={formData.socialFacebook || ""}
-                  onChange={function (e) { handleFormField("socialFacebook", e.target.value); }}
-                  variant="outlined"
-                  size="small"
-                  sx={inputSx}
-                  slotProps={{ inputLabel: { shrink: true, sx: { color: "#6B7280", fontSize: "0.85rem" } } }}
-                />
-                <TextField
-                  fullWidth
-                  placeholder="https://linkedin.com/company/yourbrand"
-                  label="LinkedIn"
-                  value={formData.socialLinkedin || ""}
-                  onChange={function (e) { handleFormField("socialLinkedin", e.target.value); }}
-                  variant="outlined"
-                  size="small"
-                  sx={inputSx}
-                  slotProps={{ inputLabel: { shrink: true, sx: { color: "#6B7280", fontSize: "0.85rem" } } }}
-                />
               </Box>
             )}
 
@@ -1236,6 +953,149 @@ export default function LaunchStepper({
             {/* ── COLOR PICKER ─────────────── */}
             {current.type === "colors" && (
               <ColorPickerGroup colors={colors} onColorChange={handleColorChange} />
+            )}
+
+            {/* ── PAGE SELECTOR ────────────── */}
+            {current.type === "pages" && template && template.pages && (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 1 }}>
+                {template.pages.map(function (page) {
+                  var selectedPages = formData.selectedPages || template.pages.map(function (p) { return p.id; });
+                  var isSelected = selectedPages.indexOf(page.id) !== -1;
+                  var isHome = page.id === "home";
+                  return (
+                    <Box
+                      key={page.id}
+                      onClick={function () {
+                        if (isHome) return;
+                        var current = formData.selectedPages || template.pages.map(function (p) { return p.id; });
+                        var next;
+                        if (isSelected) {
+                          next = current.filter(function (id) { return id !== page.id; });
+                        } else {
+                          next = current.concat(page.id);
+                        }
+                        handleFormField("selectedPages", next);
+                      }}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        p: 1.5,
+                        borderRadius: "0.75rem",
+                        border: isSelected ? "2px solid " + purple : "2px solid #E5E7EB",
+                        background: isSelected ? "#F5F3FF" : "#fff",
+                        cursor: isHome ? "default" : "pointer",
+                        opacity: isHome ? 0.75 : 1,
+                        transition: "border-color 0.2s, background 0.2s",
+                        "&:hover": isHome ? {} : { borderColor: purpleLight, background: "#FAFAFE" },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: "6px",
+                          border: isSelected ? "2px solid " + purple : "2px solid #D1D5DB",
+                          background: isSelected ? purple : "transparent",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        {isSelected && (
+                          <CheckCircleOutlineIcon sx={{ fontSize: 16, color: "#fff" }} />
+                        )}
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" fontWeight={600} color="#1F2937" fontSize="0.85rem">
+                          {page.title}
+                        </Typography>
+                        {isHome && (
+                          <Typography variant="caption" color="#9CA3AF" fontSize="0.65rem">
+                            Always included
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  );
+                })}
+
+                {/* ── Additional AI-generated pages ── */}
+                {(function () {
+                  var templateIds = template.pages.map(function (p) { return p.id; });
+                  var customTypes = PAGE_TYPES.filter(function (pt) { return templateIds.indexOf(pt.id) === -1; });
+                  if (customTypes.length === 0) return null;
+                  var selectedPages = formData.selectedPages || templateIds;
+                  return (
+                    <>
+                      <Box sx={{ mt: 1, mb: 0.5 }}>
+                        <Typography variant="caption" fontWeight={700} color="#9CA3AF" fontSize="0.65rem" sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                          Additional pages (AI-generated)
+                        </Typography>
+                      </Box>
+                      {customTypes.map(function (pt) {
+                        var isSelected = selectedPages.indexOf(pt.id) !== -1;
+                        return (
+                          <Box
+                            key={pt.id}
+                            onClick={function () {
+                              var current = formData.selectedPages || templateIds;
+                              var next;
+                              if (isSelected) {
+                                next = current.filter(function (id) { return id !== pt.id; });
+                              } else {
+                                next = current.concat(pt.id);
+                              }
+                              handleFormField("selectedPages", next);
+                            }}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1.5,
+                              p: 1.5,
+                              borderRadius: "0.75rem",
+                              border: isSelected ? "2px solid " + purple : "2px solid #E5E7EB",
+                              background: isSelected ? "#F5F3FF" : "#fff",
+                              cursor: "pointer",
+                              transition: "border-color 0.2s, background 0.2s",
+                              "&:hover": { borderColor: purpleLight, background: "#FAFAFE" },
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: 22,
+                                height: 22,
+                                borderRadius: "6px",
+                                border: isSelected ? "2px solid " + purple : "2px solid #D1D5DB",
+                                background: isSelected ? purple : "transparent",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                                transition: "all 0.15s",
+                              }}
+                            >
+                              {isSelected && (
+                                <CheckCircleOutlineIcon sx={{ fontSize: 16, color: "#fff" }} />
+                              )}
+                            </Box>
+                            <Box>
+                              <Typography variant="body2" fontWeight={600} color="#1F2937" fontSize="0.85rem">
+                                {pt.title}
+                              </Typography>
+                              <Typography variant="caption" color="#9CA3AF" fontSize="0.65rem">
+                                {pt.description}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        );
+                      })}
+                    </>
+                  );
+                })()}
+              </Box>
             )}
 
             {/* ── IMAGE UPLOAD ──────────────── */}

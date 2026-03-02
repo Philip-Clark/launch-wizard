@@ -1,12 +1,14 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { ThemeProvider, createTheme, CssBaseline, Box, Typography } from "@mui/material";
+import JSZip from "jszip";
 import LaunchStepper from "./components/LaunchStepper";
 import PreviewPanel from "./components/PreviewPanel";
 import { steps } from "./data/steps";
 import { fillTemplate } from "./data/template";
 import { templates } from "./data/templates/index";
-import { FIELD_TO_STEP } from "./data/fieldMappings";
-import { generateSiteContent } from "./services/gemini";
+import { FIELD_TO_STEP, getPageForField } from "./data/fieldMappings";
+import { generateSiteContent, suggestPages } from "./services/gemini";
+import { getPageType, isCustomPage } from "./data/pageTypes";
 
 var theme = createTheme({
   palette: {
@@ -93,15 +95,25 @@ export default function App() {
   var highlightedField = stateHighlightedField[0];
   var setHighlightedField = stateHighlightedField[1];
 
-  var stateFocusField = useState(null);
-  var focusField = stateFocusField[0];
-  var setFocusField = stateFocusField[1];
+  var stateSelectedElement = useState(null);
+  var selectedElement = stateSelectedElement[0];
+  var setSelectedElement = stateSelectedElement[1];
 
   var stateGenerationStatus = useState(
     saved && saved.generationStatus === "done" ? "done" : "idle"
   );
   var generationStatus = stateGenerationStatus[0];
   var setGenerationStatus = stateGenerationStatus[1];
+
+  var stateActivePage = useState(saved && saved.activePage ? saved.activePage : "home");
+  var activePage = stateActivePage[0];
+  var setActivePage = stateActivePage[1];
+
+  var stateSuggestedPages = useState(null);
+  var suggestedPages = stateSuggestedPages[0];
+  var setSuggestedPages = stateSuggestedPages[1];
+
+  var pageSuggestStatusRef = useRef("idle");
 
   var lastGenInputsRef = useRef("");
   var genInputs = [formData.brandName, formData.businessType, formData.ctaIntent, formData.description].join("|");
@@ -112,6 +124,25 @@ export default function App() {
       lastGenInputsRef.current = genInputs;
     }
   }, []);
+
+  /* Trigger AI page suggestions when entering step 5+ (after theme is selected) */
+  useEffect(function () {
+    if (activeStep >= 5 && pageSuggestStatusRef.current === "idle" && !formData.selectedPages) {
+      pageSuggestStatusRef.current = "loading";
+      suggestPages(
+        formData.brandName,
+        formData.businessType,
+        formData.ctaIntent,
+        formData.description,
+        selectedTemplate
+      ).then(function (pages) {
+        pageSuggestStatusRef.current = "done";
+        setSuggestedPages(pages);
+      }).catch(function () {
+        pageSuggestStatusRef.current = "error";
+      });
+    }
+  }, [activeStep]);
 
   var imageDataUrls = useMemo(function () {
     return images.map(function (img) { return img.dataUrl; });
@@ -135,7 +166,7 @@ export default function App() {
 
   function handleThemeChange(themeId) {
     setFormData(function (prev) {
-      return Object.assign({}, prev, { theme: themeId });
+      return Object.assign({}, prev, { theme: themeId, selectedPages: null });
     });
     var t = templates.find(function (t) { return t.id === themeId; });
     if (t) {
@@ -143,6 +174,9 @@ export default function App() {
     }
     setAdvanced(defaultAdvanced);
     setGenerationStatus("idle");
+    setActivePage("home");
+    setSuggestedPages(null);
+    pageSuggestStatusRef.current = "idle";
   }
 
   function handleTriggerGeneration() {
@@ -155,7 +189,8 @@ export default function App() {
       formData.ctaIntent,
       formData.description,
       selectedTemplate,
-      formData.businessType
+      formData.businessType,
+      formData.selectedPages
     ).then(function (result) {
       var generated = Object.assign({}, result);
       if (formData.brandName) {
@@ -172,9 +207,9 @@ export default function App() {
     });
   }
 
-  /* Auto-trigger generation when navigating past the theme step */
+  /* Auto-trigger generation when navigating past the pages step */
   useEffect(function () {
-    if (activeStep >= 5) {
+    if (activeStep >= 7) {
       if (generationStatus === "idle") {
         handleTriggerGeneration();
       } else if (
@@ -196,18 +231,61 @@ export default function App() {
       imageDataUrls: imageDataUrls,
       advanced: advanced,
       generationStatus: generationStatus === "loading" ? "idle" : generationStatus,
+      activePage: activePage,
     });
-  }, [activeStep, formData, colors, logoDataUrl, imageDataUrls, advanced, generationStatus]);
+  }, [activeStep, formData, colors, logoDataUrl, imageDataUrls, advanced, generationStatus, activePage]);
 
   function handleDownload() {
-    var html = fillTemplate(selectedTemplate, allValues, imageDataUrls);
-    var blob = new Blob([html], { type: "text/html" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = (formData.brandName || "site") + ".html";
-    a.click();
-    URL.revokeObjectURL(url);
+    var pages = selectedTemplate.pages;
+    var selectedPages = formData.selectedPages;
+
+    // Filter to selected pages
+    var activePages = pages;
+    if (selectedPages && pages && pages.length > 1) {
+      activePages = pages.filter(function (p) { return selectedPages.indexOf(p.id) !== -1; });
+    }
+
+    // Append custom pages
+    var customEntries = [];
+    if (selectedPages) {
+      selectedPages.forEach(function (id) {
+        if (!isCustomPage(id, pages)) return;
+        var pt = getPageType(id);
+        if (pt) customEntries.push({ id: pt.id, filename: pt.filename, title: pt.title });
+      });
+    }
+
+    var allPages = (activePages || []).concat(customEntries);
+
+    if (!allPages || allPages.length <= 1) {
+      // Single page download
+      var pageId = allPages && allPages.length === 1 ? allPages[0].id : "home";
+      var html = fillTemplate(selectedTemplate, allValues, imageDataUrls, pageId);
+      var blob = new Blob([html], { type: "text/html" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = (formData.brandName || "site") + ".html";
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    // Multi-page: create ZIP
+    var zip = new JSZip();
+    allPages.forEach(function (page) {
+      var pageHtml = fillTemplate(selectedTemplate, allValues, imageDataUrls, page.id);
+      zip.file(page.filename, pageHtml);
+    });
+
+    zip.generateAsync({ type: "blob" }).then(function (zipBlob) {
+      var url = URL.createObjectURL(zipBlob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = (formData.brandName || "site") + ".zip";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
   }
 
   function handleRestart() {
@@ -218,31 +296,56 @@ export default function App() {
     setLogoDataUrl("");
     setAdvanced(defaultAdvanced);
     setGenerationStatus("idle");
+    setActivePage("home");
+    setSuggestedPages(null);
+    pageSuggestStatusRef.current = "idle";
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
   }
 
-  function handleFieldClick(field) {
+  function handleFieldClick(selection) {
+    if (!selection) {
+      setSelectedElement(null);
+      return;
+    }
+    var field = selection.field;
     var stepIndex = FIELD_TO_STEP[field];
     if (activeStep === steps.length - 1) {
-      // On review: navigate to wizard step for non-editable fields (images, logo),
-      // focus fine tuner for text content fields
       if ((field === "images" || field === "logo") && stepIndex !== undefined) {
         setActiveStep(stepIndex);
       } else {
-        setFocusField(field);
+        var fieldPage = getPageForField(selectedTemplate, field);
+        if (fieldPage && fieldPage.id !== activePage) {
+          setActivePage(fieldPage.id);
+        }
+        // Handle cp_ fields — switch to the custom page
+        if (field.indexOf("cp_") === 0) {
+          var parts = field.split("_");
+          if (parts.length >= 3) {
+            var cpPageId = parts[1];
+            if (cpPageId !== activePage) setActivePage(cpPageId);
+          }
+        }
+        setSelectedElement(selection);
       }
     } else {
-      if (stepIndex !== undefined) {
+      if ((field === "images" || field === "logo") && stepIndex !== undefined) {
         setActiveStep(stepIndex);
       } else {
         setActiveStep(steps.length - 1);
-        setFocusField(field);
+        var fieldPage2 = getPageForField(selectedTemplate, field);
+        if (fieldPage2 && fieldPage2.id !== activePage) {
+          setActivePage(fieldPage2.id);
+        }
+        if (field.indexOf("cp_") === 0) {
+          var parts2 = field.split("_");
+          if (parts2.length >= 3) {
+            var cpPageId2 = parts2[1];
+            if (cpPageId2 !== activePage) setActivePage(cpPageId2);
+          }
+        }
+        setSelectedElement(selection);
       }
     }
-  }
-
-  function handleClearFocusField() {
-    setFocusField(null);
   }
 
   return (
@@ -347,8 +450,11 @@ export default function App() {
               setAdvanced={setAdvanced}
               template={selectedTemplate}
               onHighlight={setHighlightedField}
-              focusField={focusField}
-              onClearFocusField={handleClearFocusField}
+              selectedElement={selectedElement}
+              setSelectedElement={setSelectedElement}
+              activePage={activePage}
+              setActivePage={setActivePage}
+              suggestedPages={suggestedPages}
             />
           </Box>
 
@@ -380,6 +486,9 @@ export default function App() {
               template={selectedTemplate}
               onFieldClick={handleFieldClick}
               highlightedField={highlightedField}
+              selectedElement={selectedElement}
+              activePage={activePage}
+              setActivePage={setActivePage}
             />
           </Box>
         </Box>
